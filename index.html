@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carb Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result.success {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-left: 5px solid #28a745;
+            color: #155724;
+        }
+
+        .result.error {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            border-left: 5px solid #dc3545;
+            color: #721c24;
+        }
+
+        .calculation-details {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .food-list {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .food-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .food-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .food-item {
+            padding: 8px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .examples strong {
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .food-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥗 Carb Calculator</h1>
+        
+        <div class="input-group">
+            <label for="foodInput">Enter food item and amount:</label>
+            <input type="text" id="foodInput" placeholder="e.g., 6 ounces of apple, apple 6 oz, banana 4.5 ounces">
+        </div>
+        
+        <button class="calculate-btn" onclick="calculateCarbs()">Calculate Carbs</button>
+        
+        <div id="result" class="result"></div>
+
+        <div class="examples">
+            <strong>Example formats:</strong><br>
+            • "6 ounces of apple" or "apple, 6 oz"<br>
+            • "banana 4.5 ounces" or "2.5 oz chicken"<br>
+            • "rice 8 oz" or "10 ounces of broccoli"
+        </div>
+
+        <div class="food-list">
+            <h3>Available Foods Database</h3>
+            <div class="food-grid" id="foodGrid">
+                <!-- Food items will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Food database - Replace this with your actual data
+        const foodDatabase = {
+            'apple': 3.9,
+            'banana': 5.7,
+            'orange': 3.1,
+            'chicken': 0.0,
+            'beef': 0.0,
+            'rice': 22.0,
+            'bread': 13.0,
+            'pasta': 25.0,
+            'broccoli': 1.4,
+            'carrot': 2.3,
+            'potato': 4.6,
+            'sweet potato': 5.6,
+            'corn': 4.8,
+            'peas': 3.5,
+            'beans': 4.5,
+            'cheese': 0.8,
+            'milk': 1.2,
+            'yogurt': 1.1,
+            'oats': 16.0,
+            'quinoa': 14.0
+        };
+
+        function populateFoodGrid() {
+            const foodGrid = document.getElementById('foodGrid');
+            foodGrid.innerHTML = '';
+            
+            Object.entries(foodDatabase)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .forEach(([food, carbsPerOz]) => {
+                    const foodItem = document.createElement('div');
+                    foodItem.className = 'food-item';
+                    foodItem.innerHTML = `
+                        <span>${food}</span>
+                        <span>${carbsPerOz}g/oz</span>
+                    `;
+                    foodGrid.appendChild(foodItem);
+                });
+        }
+
+        function parseInput(input) {
+            const text = input.toLowerCase().trim();
+            
+            // Various regex patterns to match different input formats
+            const patterns = [
+                /(\d+\.?\d*)\s*(?:ounces?|oz)\s*(?:of\s+)?(.+)/,  // "6 ounces of apple"
+                /(.+?)[\s,]+(\d+\.?\d*)\s*(?:ounces?|oz)/,        // "apple, 6 oz"
+                /(.+?)\s+(\d+\.?\d*)\s*(?:ounces?|oz)/,           // "apple 6 oz"
+                /(\d+\.?\d*)\s+(.+)/                              // "6 apple" (fallback)
+            ];
+            
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    let food, ounces;
+                    if (pattern === patterns[0] || pattern === patterns[3]) {
+                        ounces = parseFloat(match[1]);
+                        food = match[2].trim();
+                    } else {
+                        food = match[1].trim();
+                        ounces = parseFloat(match[2]);
+                    }
+                    
+                    // Clean up food name
+                    food = food.replace(/^(of\s+|the\s+)/, '').trim();
+                    
+                    return { food, ounces };
+                }
+            }
+            
+            return null;
+        }
+
+        function findFood(foodName) {
+            const cleanName = foodName.toLowerCase().trim();
+            
+            // Exact match first
+            if (foodDatabase[cleanName]) {
+                return { name: cleanName, carbsPerOz: foodDatabase[cleanName] };
+            }
+            
+            // Partial match
+            for (const [dbFood, carbs] of Object.entries(foodDatabase)) {
+                if (dbFood.includes(cleanName) || cleanName.includes(dbFood)) {
+                    return { name: dbFood, carbsPerOz: carbs };
+                }
+            }
+            
+            return null;
+        }
+
+        function calculateCarbs() {
+            const input = document.getElementById('foodInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!input.trim()) {
+                showResult('Please enter a food item and amount.', 'error');
+                return;
+            }
+            
+            const parsed = parseInput(input);
+            if (!parsed) {
+                showResult('Unable to parse input. Please use format like "6 ounces of apple" or "apple, 6 oz".', 'error');
+                return;
+            }
+            
+            const { food, ounces } = parsed;
+            const foundFood = findFood(food);
+            
+            if (!foundFood) {
+                showResult(`Food item "${food}" not found in database. Please add this item to the spreadsheet for future reference.`, 'error');
+                return;
+            }
+            
+            const totalCarbs = (foundFood.carbsPerOz * ounces).toFixed(1);
+            const calculation = `${foundFood.carbsPerOz} carbs/oz × ${ounces} oz = ${totalCarbs}g carbs`;
+            
+            const resultHtml = `
+                <strong>Result:</strong> ${totalCarbs}g total carbohydrates
+                <div class="calculation-details">
+                    <strong>Calculation:</strong><br>
+                    Food: ${foundFood.name}<br>
+                    Carbs per ounce: ${foundFood.carbsPerOz}g<br>
+                    Amount: ${ounces} oz<br>
+                    ${calculation}
+                </div>
+            `;
+            
+            showResult(resultHtml, 'success');
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            
+            // Trigger animation
+            setTimeout(() => {
+                resultDiv.classList.add('show');
+            }, 50);
+        }
+
+        // Handle Enter key press
+        document.getElementById('foodInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculateCarbs();
+            }
+        });
+
+        // Initialize the food grid on page load
+        populateFoodGrid();
+    </script>
+</body>
+</html>

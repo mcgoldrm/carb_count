@@ -288,13 +288,13 @@
                 <li>Click "Publish" and copy the URL</li>
                 <li>Replace the SHEET_URL in the code with your published sheet URL</li>
             </ol>
-            <p><strong>Current Status:</strong> Using sample data. Update SHEET_URL to connect your Google Sheet.</p>
+            <p><strong>Current Status:</strong> Connected to your Google Sheet! Data will load automatically.</p>
         </div>
     </div>
 
     <script>
         // Replace this URL with your published Google Sheets CSV URL
-        const SHEET_URL = 'YOUR_GOOGLE_SHEET_CSV_URL_HERE';
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-FjQ8q8R9dfld12rDYsE3499wmXdx6443YamLWUY6Ep8t5oQLaYd3e-qpreeRvdWVEEKleBFadLFM/pub?output=csv';
         
         // Fallback sample data (used when Google Sheets is not configured)
         const fallbackData = {
@@ -355,7 +355,7 @@
             showStatus('Loading food database...', 'success');
             
             // Check if Google Sheets URL is configured
-            if (SHEET_URL === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-FjQ8q8R9dfld12rDYsE3499wmXdx6443YamLWUY6Ep8t5oQLaYd3e-qpreeRvdWVEEKleBFadLFM/pub?output=csv') {
+            if (SHEET_URL === 'YOUR_GOOGLE_SHEET_CSV_URL_HERE') {
                 foodDatabase = fallbackData;
                 showStatus('Using sample data. Configure Google Sheets URL for live data.', 'error');
                 populateFoodGrid();

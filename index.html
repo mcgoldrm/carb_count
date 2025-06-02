@@ -75,7 +75,7 @@
             transform: scale(1.02);
         }
 
-        .calculate-btn {
+        .calculate-btn, .refresh-btn {
             width: 100%;
             padding: 15px;
             background: linear-gradient(45deg, #667eea, #764ba2);
@@ -88,14 +88,21 @@
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-bottom: 10px;
         }
 
-        .calculate-btn:hover {
+        .refresh-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        .calculate-btn:hover, .refresh-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .calculate-btn:active {
+        .calculate-btn:active, .refresh-btn:active {
             transform: translateY(0);
         }
 
@@ -125,6 +132,12 @@
             background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
             border-left: 5px solid #dc3545;
             color: #721c24;
+        }
+
+        .result.loading {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-left: 5px solid #17a2b8;
+            color: #0c5460;
         }
 
         .calculation-details {
@@ -177,6 +190,49 @@
             color: #333;
         }
 
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .setup-instructions {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid #17a2b8;
+        }
+
+        .setup-instructions h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+
+        .setup-instructions ol {
+            margin-left: 20px;
+        }
+
+        .setup-instructions li {
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 14px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -197,12 +253,15 @@
     <div class="container">
         <h1>🥗 Carb Calculator</h1>
         
+        <div id="status" class="status"></div>
+        
         <div class="input-group">
             <label for="foodInput">Enter food item and amount:</label>
             <input type="text" id="foodInput" placeholder="e.g., 6 ounces of apple, apple 6 oz, banana 4.5 ounces">
         </div>
         
         <button class="calculate-btn" onclick="calculateCarbs()">Calculate Carbs</button>
+        <button class="refresh-btn" onclick="loadFoodDatabase()">🔄 Refresh Food Database</button>
         
         <div id="result" class="result"></div>
 
@@ -216,14 +275,29 @@
         <div class="food-list">
             <h3>Available Foods Database</h3>
             <div class="food-grid" id="foodGrid">
-                <!-- Food items will be populated by JavaScript -->
+                <div style="text-align: center; color: #666;">Loading food database...</div>
             </div>
+        </div>
+
+        <div class="setup-instructions">
+            <h4>📋 Setup Instructions for Google Sheets Integration:</h4>
+            <ol>
+                <li>Create a Google Sheet with Column A = Food Names, Column B = Carbs per Ounce</li>
+                <li>Go to File → Share → Publish to Web</li>
+                <li>Choose "Entire Document" and "Comma-separated values (.csv)"</li>
+                <li>Click "Publish" and copy the URL</li>
+                <li>Replace the SHEET_URL in the code with your published sheet URL</li>
+            </ol>
+            <p><strong>Current Status:</strong> Using sample data. Update SHEET_URL to connect your Google Sheet.</p>
         </div>
     </div>
 
     <script>
-        // Food database - Replace this with your actual data
-        const foodDatabase = {
+        // Replace this URL with your published Google Sheets CSV URL
+        const SHEET_URL = 'YOUR_GOOGLE_SHEET_CSV_URL_HERE';
+        
+        // Fallback sample data (used when Google Sheets is not configured)
+        const fallbackData = {
             'apple': 3.9,
             'banana': 5.7,
             'orange': 3.1,
@@ -246,9 +320,80 @@
             'quinoa': 14.0
         };
 
+        let foodDatabase = {};
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const database = {};
+            
+            // Skip header row if it exists
+            const startRow = lines[0].toLowerCase().includes('food') || lines[0].toLowerCase().includes('carb') ? 1 : 0;
+            
+            for (let i = startRow; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const [food, carbs] = line.split(',').map(item => item.trim().replace(/"/g, ''));
+                const carbValue = parseFloat(carbs);
+                
+                if (food && !isNaN(carbValue)) {
+                    database[food.toLowerCase()] = carbValue;
+                }
+            }
+            
+            return database;
+        }
+
+        async function loadFoodDatabase() {
+            showStatus('Loading food database...', 'success');
+            
+            // Check if Google Sheets URL is configured
+            if (SHEET_URL === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-FjQ8q8R9dfld12rDYsE3499wmXdx6443YamLWUY6Ep8t5oQLaYd3e-qpreeRvdWVEEKleBFadLFM/pub?output=csv') {
+                foodDatabase = fallbackData;
+                showStatus('Using sample data. Configure Google Sheets URL for live data.', 'error');
+                populateFoodGrid();
+                return;
+            }
+            
+            try {
+                const response = await fetch(SHEET_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const csvText = await response.text();
+                foodDatabase = parseCSV(csvText);
+                
+                if (Object.keys(foodDatabase).length === 0) {
+                    throw new Error('No valid food data found in spreadsheet');
+                }
+                
+                showStatus(`Successfully loaded ${Object.keys(foodDatabase).length} food items from Google Sheets`, 'success');
+                populateFoodGrid();
+                
+            } catch (error) {
+                console.error('Error loading food database:', error);
+                foodDatabase = fallbackData;
+                showStatus('Failed to load from Google Sheets. Using sample data.', 'error');
+                populateFoodGrid();
+            }
+        }
+
         function populateFoodGrid() {
             const foodGrid = document.getElementById('foodGrid');
             foodGrid.innerHTML = '';
+            
+            if (Object.keys(foodDatabase).length === 0) {
+                foodGrid.innerHTML = '<div style="text-align: center; color: #666;">No food data available</div>';
+                return;
+            }
             
             Object.entries(foodDatabase)
                 .sort(([a], [b]) => a.localeCompare(b))
@@ -266,12 +411,11 @@
         function parseInput(input) {
             const text = input.toLowerCase().trim();
             
-            // Various regex patterns to match different input formats
             const patterns = [
-                /(\d+\.?\d*)\s*(?:ounces?|oz)\s*(?:of\s+)?(.+)/,  // "6 ounces of apple"
-                /(.+?)[\s,]+(\d+\.?\d*)\s*(?:ounces?|oz)/,        // "apple, 6 oz"
-                /(.+?)\s+(\d+\.?\d*)\s*(?:ounces?|oz)/,           // "apple 6 oz"
-                /(\d+\.?\d*)\s+(.+)/                              // "6 apple" (fallback)
+                /(\d+\.?\d*)\s*(?:ounces?|oz)\s*(?:of\s+)?(.+)/,
+                /(.+?)[\s,]+(\d+\.?\d*)\s*(?:ounces?|oz)/,
+                /(.+?)\s+(\d+\.?\d*)\s*(?:ounces?|oz)/,
+                /(\d+\.?\d*)\s+(.+)/
             ];
             
             for (const pattern of patterns) {
@@ -286,9 +430,7 @@
                         ounces = parseFloat(match[2]);
                     }
                     
-                    // Clean up food name
                     food = food.replace(/^(of\s+|the\s+)/, '').trim();
-                    
                     return { food, ounces };
                 }
             }
@@ -299,12 +441,10 @@
         function findFood(foodName) {
             const cleanName = foodName.toLowerCase().trim();
             
-            // Exact match first
             if (foodDatabase[cleanName]) {
                 return { name: cleanName, carbsPerOz: foodDatabase[cleanName] };
             }
             
-            // Partial match
             for (const [dbFood, carbs] of Object.entries(foodDatabase)) {
                 if (dbFood.includes(cleanName) || cleanName.includes(dbFood)) {
                     return { name: dbFood, carbsPerOz: carbs };
@@ -316,10 +456,14 @@
 
         function calculateCarbs() {
             const input = document.getElementById('foodInput').value;
-            const resultDiv = document.getElementById('result');
             
             if (!input.trim()) {
                 showResult('Please enter a food item and amount.', 'error');
+                return;
+            }
+
+            if (Object.keys(foodDatabase).length === 0) {
+                showResult('Food database not loaded. Please click "Refresh Food Database" first.', 'error');
                 return;
             }
             
@@ -333,7 +477,7 @@
             const foundFood = findFood(food);
             
             if (!foundFood) {
-                showResult(`Food item "${food}" not found in database. Please add this item to the spreadsheet for future reference.`, 'error');
+                showResult(`Food item "${food}" not found in database. Please add this item to your Google Sheet and refresh.`, 'error');
                 return;
             }
             
@@ -359,7 +503,6 @@
             resultDiv.innerHTML = message;
             resultDiv.className = `result ${type}`;
             
-            // Trigger animation
             setTimeout(() => {
                 resultDiv.classList.add('show');
             }, 50);
@@ -372,8 +515,8 @@
             }
         });
 
-        // Initialize the food grid on page load
-        populateFoodGrid();
+        // Load food database on page load
+        loadFoodDatabase();
     </script>
 </body>
 </html>
